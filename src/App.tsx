@@ -26,6 +26,48 @@ export default function App() {
   const [application, setApplication] = useState<ApplicationData | null>(null);
   const [activeKycStep, setActiveKycStep] = useState<KycStep>(1);
 
+  // Global Web3 Wallet Connection Modal states
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [modalWalletType, setModalWalletType] = useState<string>('');
+  const [modalNetwork, setModalNetwork] = useState<'polygon' | 'bsc'>('polygon');
+  const [modalLoadingStep, setModalLoadingStep] = useState<number>(0); // 0 = idle, 1 = loading, 2 = switching, 3 = finalizing, 4 = success
+  const [modalLoadingText, setModalLoadingText] = useState<string>('');
+
+  const handleConnectWalletInModal = (walletType: string) => {
+    setModalWalletType(walletType);
+    setModalLoadingStep(1);
+    setModalLoadingText(`Scanning for local ${walletType} extension hooks on EVM...`);
+    
+    setTimeout(() => {
+      setModalLoadingStep(2);
+      setModalLoadingText(`Requesting chain switch parameters to ${modalNetwork === 'polygon' ? 'Polygon Mainnet' : 'Binance Smart Chain (BSC)'}...`);
+    }, 950);
+
+    setTimeout(() => {
+      setModalLoadingStep(3);
+      setModalLoadingText('Exchanging cryptographically secured non-custodial POS handshake tokens...');
+    }, 1850);
+
+    setTimeout(() => {
+      setModalLoadingStep(4);
+      setModalLoadingText('Authentication verified! Syncing staker portfolio indexes...');
+    }, 2650);
+
+    setTimeout(() => {
+      const hexAddress = '0x71C' + Math.floor(Math.random() * 1e16).toString(16).toUpperCase() + '49A1';
+      localStorage.setItem('mep_active_wallet', hexAddress);
+      localStorage.setItem('mep_active_wallet_type', walletType);
+      localStorage.setItem('mep_active_wallet_network', modalNetwork === 'polygon' ? 'Polygon Mainnet' : 'Binance Smart Chain (BSC)');
+      localStorage.setItem('mep_active_wallet_balance', modalNetwork === 'polygon' ? '250000' : '450');
+      localStorage.setItem('mep_redirect_to_dashboard', 'true');
+      
+      setIsWalletModalOpen(false);
+      setModalLoadingStep(0);
+      setModalWalletType('');
+      handleViewChange('disbursement');
+    }, 3400);
+  };
+
   // Initialize data from localStorage on mount
   useEffect(() => {
     const cachedApp = localStorage.getItem('mep_application_data');
@@ -94,6 +136,7 @@ export default function App() {
         currentView={currentView} 
         onViewChange={handleViewChange}
         onOpenSupport={() => {}}
+        onOpenWalletModal={() => setIsWalletModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -266,13 +309,13 @@ export default function App() {
               <div className="flex items-center space-x-2">
                 {/* Accurate official Polygon SVG Emblem */}
                 <svg 
-                  viewBox="0 0 38 38" 
+                  viewBox="0 0 24 24" 
                   fill="none" 
                   className="w-5.5 h-5.5 text-purple-glow" 
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path 
-                    d="M30.4 12.835L24.58 9.475V16.2L30.4 19.56a1.114 1.114 0 01.558.966v6.72c0 .403-.215.776-.558.966l-5.82 3.36a1.114 1.114 0 01-1.115 0l-5.82-3.36a1.114 1.114 0 01-.558-.966V20.526l2.316-1.337L15 16.634V9.914a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l5.82 3.36a1.114 1.114 0 01.558.966v2.921h1.529V9.914c0-.792-.423-1.525-1.115-1.898l-5.82-3.36a2.228 2.228 0 00-2.23 0l-5.82 3.36a2.228 2.228 0 00-1.114 1.898v6.72c0 .403.214.776.557.966l5.82 3.36a1.113 1.113 0 01.558.966v6.72c0 .403-.214.776-.558.966l-5.82 3.36a1.114 1.114 0 01-1.115 0l-5.82-3.36c-.343-.2-.558-.564-.558-.966V20.526a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l4.314 2.49V12L9.42 15.166a1.114 1.114 0 01-.558-.966V7.48a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l5.82 3.36a1.114 1.114 0 01.558.966v2.921c0 .792.423 1.525 1.115 1.898l5.82 3.36a2.228 2.228 0 011.114 1.898v6.72c0 .792-.423 1.525-1.114 1.898l-5.82 3.36a2.228 2.228 0 01-2.23 0l-5.82-3.36a2.228 2.228 0 01-1.115-1.898V20.526a2.228 2.228 0 00-1.114-1.898l-5.82-3.36a2.228 2.228 0 00-2.23 0l-5.82 3.36a2.228 2.228 0 00-1.114 1.898V27.246c0 .792.422 1.525 1.114 1.898l5.82 3.36c.692.4 1.538.4 2.23 0l5.82-3.36c.692-.4 1.115-1.133 1.115-1.898V20.526c0-.792-.423-1.525-1.115-1.898l-4.314-2.49V12.835z" 
+                    d="M16.47 11.23a1.43 1.43 0 0 0-.71.18l-3.36 1.94a1.43 1.43 0 0 1-1.42 0L7.61 11.4a1.42 1.42 0 0 1-.71-1.23V6.29a1.42 1.42 0 0 1 .71-1.23l3.37-1.94a1.43 1.43 0 0 1 1.42 0l3.36 1.94a1.42 1.42 0 0 1 .71 1.23v2.33a.5.5 0 0 0 1 0V6.29a2.42 2.42 0 0 0-1.21-2.1l-3.36-1.94a2.43 2.43 0 0 0-2.42 0L7.13 4.19A2.42 2.42 0 0 0 5.91 6.3v3.87a2.42 2.42 0 0 0 1.21 2.1l3.37 1.94a2.43 2.43 0 0 0 2.42 0l3.36-1.94a2.42 2.42 0 0 0 1.21-2.1V7.94a1.43 1.43 0 0 1 .71-.18l3.36 1.94a1.43 1.43 0 0 1 .71 1.23v3.87a1.42 1.42 0 0 1-.71 1.23l-3.37 1.94a1.43 1.43 0 0 1-1.42 0l-3.36-1.94a1.42 1.42 0 0 1-.71-1.23V12.5a.5.5 0 0 0-1 0v2.33a2.42 2.42 0 0 0 1.21 2.1l3.36 1.94a2.43 2.43 0 0 0 2.42 0l3.37-1.94a2.42 2.42 0 0 0 .71-1.78v-3.87a2.42 2.42 0 0 0-1.21-2.1l-3.36-1.94a2.43 2.43 0 0 0-1.42-.02 1.43 1.43 0 0 0-1.54 1.3v3z" 
                     fill="#8247E5" 
                   />
                 </svg>
@@ -381,6 +424,213 @@ export default function App() {
         onJumpToStep={setActiveKycStep}
         fundingAmount={fundingAmount}
       />
+
+      {/* GLOBAL HIGH-FIDELITY WEB3 EVM NETWORK CONNECTIVITY MODAL */}
+      {isWalletModalOpen && (
+        <div id="web3-wallet-modal" className="fixed inset-0 z-[150] flex items-center justify-center p-4 overflow-y-auto">
+          {/* Backdrop Blur Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-md cursor-pointer transition-opacity"
+            onClick={() => {
+              if (modalLoadingStep === 0) setIsWalletModalOpen(false);
+            }}
+          />
+
+          {/* Modal Card Pane */}
+          <div className="relative w-full max-w-lg bg-[#0E0728] border-2 border-[#8247E5]/70 rounded-3xl p-6 sm:p-8 text-left shadow-[0_0_80px_rgba(130,71,229,0.5)] z-10 overflow-hidden transform transition-all duration-300">
+            
+            {/* Ambient Purple Backdrop Glow */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-[#8247E5]/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-yellow-500/5 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-purple-brand/20 pb-4 mb-6 relative z-10">
+              <div>
+                <h3 className="text-xl font-display font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-[#8247E5] rounded-full animate-pulse" />
+                  EVM Web3 Ledger Client
+                </h3>
+                <p className="text-xs text-gray-400 mt-1 font-sans">
+                  Connect to authorized validator consensus portals securely
+                </p>
+              </div>
+              {modalLoadingStep === 0 && (
+                <button 
+                  onClick={() => setIsWalletModalOpen(false)}
+                  className="p-1 px-2.5 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-sm font-bold font-mono border border-white/10"
+                >
+                  ESC
+                </button>
+              )}
+            </div>
+
+            {modalLoadingStep === 0 ? (
+              <div className="space-y-6 relative z-10">
+                {/* STEP 1: NETWORK SELECTION */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-[#8247E5] font-black block">
+                    STEP 1: Select Active EVM Blockchain Network
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    
+                    {/* Polygon Network Choice */}
+                    <button
+                      type="button"
+                      onClick={() => setModalNetwork('polygon')}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 text-center transition-all cursor-pointer group hover:bg-[#120935] ${
+                        modalNetwork === 'polygon' 
+                          ? 'bg-[#150B40] border-[#8247E5] shadow-[0_0_15px_rgba(130,71,229,0.25)]' 
+                          : 'bg-black/40 border-purple-brand/10 text-gray-400 hover:border-[#8247E5]/30'
+                      }`}
+                    >
+                      <svg 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        className="w-9 h-9 transition-transform duration-300 group-hover:scale-110" 
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path 
+                          d="M16.47 11.23a1.43 1.43 0 0 0-.71.18l-3.36 1.94a1.43 1.43 0 0 1-1.42 0L7.61 11.4a1.42 1.42 0 0 1-.71-1.23V6.29a1.42 1.42 0 0 1 .71-1.23l3.37-1.94a1.43 1.43 0 0 1 1.42 0l3.36 1.94a1.42 1.42 0 0 1 .71 1.23v2.33a.5.5 0 0 0 1 0V6.29a2.42 2.42 0 0 0-1.21-2.1l-3.36-1.94a2.43 2.43 0 0 0-2.42 0L7.13 4.19A2.42 2.42 0 0 0 5.91 6.3v3.87a2.42 2.42 0 0 0 1.21 2.1l3.37 1.94a2.43 2.43 0 0 0 2.42 0l3.36-1.94a2.42 2.42 0 0 0 1.21-2.1V7.94a1.43 1.43 0 0 1 .71-.18l3.36 1.94a1.43 1.43 0 0 1 .71 1.23v3.87a1.42 1.42 0 0 1-.71 1.23l-3.37 1.94a1.43 1.43 0 0 1-1.42 0l-3.36-1.94a1.42 1.42 0 0 1-.71-1.23V12.5a.5.5 0 0 0-1 0v2.33a2.42 2.42 0 0 0 1.21 2.1l3.36 1.94a2.43 2.43 0 0 0 2.42 0l3.37-1.94a2.42 2.42 0 0 0 .71-1.78v-3.87a2.42 2.42 0 0 0-1.21-2.1l-3.36-1.94a2.43 2.43 0 0 0-1.42-.02 1.43 1.43 0 0 0-1.54 1.3v3z" 
+                          fill="#8247E5" 
+                        />
+                      </svg>
+                      <span className="text-white text-xs font-display font-bold uppercase mt-2 block group-hover:text-[#8247E5] transition-colors">
+                        Polygon PoS
+                      </span>
+                      <span className="text-[9px] font-mono text-purple-glow uppercase tracking-widest mt-0.5">
+                        MATIC Mainnet
+                      </span>
+                    </button>
+
+                    {/* BSC Network Choice */}
+                    <button
+                      type="button"
+                      onClick={() => setModalNetwork('bsc')}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 text-center transition-all cursor-pointer group hover:bg-[#120935] ${
+                        modalNetwork === 'bsc' 
+                          ? 'bg-[#150B40] border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]' 
+                          : 'bg-black/40 border-purple-brand/10 text-gray-400 hover:border-yellow-500/30'
+                      }`}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="w-9 h-9 transition-transform duration-300 group-hover:scale-110"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M12 2L4.5 9.5L12 17L19.5 9.5L12 2Z"
+                          fill="#F3BA2F"
+                          className="opacity-20"
+                        />
+                        <path
+                          d="M12 2L9 5L12 8L15 5L12 2ZM9 5L4.5 9.5L9 14L10.5 12.5L7.5 9.5L10.5 6.5L9 5ZM12 8L10.5 9.5L12 11L13.5 9.5L12 8ZM15 5L13.5 6.5L16.5 9.5L13.5 12.5L15 14L19.5 9.5L15 5ZM9 14L12 17L15 14L12 11L9 14ZM12 17L10.5 18.5L12 20L13.5 18.5L12 17ZM9 14L7.5 15.5L12 20L16.5 15.5L15 14L12 17L9 14Z"
+                          fill="#F3BA2F"
+                        />
+                      </svg>
+                      <span className="text-white text-xs font-display font-bold uppercase mt-2 block group-hover:text-yellow-400 transition-colors">
+                        Binance Chain
+                      </span>
+                      <span className="text-[9px] font-mono text-yellow-500 uppercase tracking-widest mt-0.5">
+                        BSC Smart Contract
+                      </span>
+                    </button>
+
+                  </div>
+                </div>
+
+                {/* STEP 2: WALLET SELECTOR */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-[#8247E5] font-black block">
+                    STEP 2: Select Secure Handshake Provider Client
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { id: 'MetaMask', name: 'MetaMask Wallet', desc: 'Sovereign browser module' },
+                      { id: 'Trust Wallet', name: 'Trust Wallet App', desc: 'Secure mobile multi-chain' },
+                      { id: 'Binance Web3 Wallet', name: 'Binance Web3 Vault', desc: 'Direct exchange bridge' },
+                      { id: 'Coinbase Wallet', name: 'Coinbase Wallet', desc: 'Enterprise node vault' }
+                    ].map((wallet) => (
+                      <button
+                        key={wallet.id}
+                        type="button"
+                        onClick={() => handleConnectWalletInModal(wallet.id)}
+                        className="text-left p-3.5 bg-black/45 border border-purple-brand/15 rounded-xl hover:border-[#8247E5] hover:bg-gradient-to-r hover:from-purple-brand/10 hover:to-purple-brand/5 transition-all text-white font-medium text-xs duration-200 cursor-pointer flex justify-between items-center group active:scale-95"
+                      >
+                        <div>
+                          <span className="font-display font-extrabold text-[#D1D5DB] group-hover:text-white block">
+                            {wallet.name}
+                          </span>
+                          <span className="text-[10px] text-gray-400 block mt-0.5">
+                            {wallet.desc}
+                          </span>
+                        </div>
+                        <span className="text-[#8247E5] opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all font-bold">→</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* WalletConnect Registry options */}
+                  <button
+                    type="button"
+                    onClick={() => handleConnectWalletInModal('WalletConnect')}
+                    className="w-full text-center p-3.5 bg-gradient-to-r from-[#170C3B] to-[#120731] hover:from-[#221355] hover:to-[#190B44] border border-[#8247E5]/40 rounded-xl hover:border-[#8247E5] transition-all text-white font-bold text-xs cursor-pointer flex items-center justify-center space-x-1.5 uppercase font-display tracking-wider"
+                  >
+                    <span>🔗</span>
+                    <span>Link WalletConnect Registry</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center space-y-6 relative z-10">
+                {/* Simulated Web3 Connection Loading Sequences */}
+                <div className="flex items-center justify-center relative">
+                  <span className="relative flex h-14 w-14">
+                    {/* Pulsing ring */}
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8247E5] opacity-40"></span>
+                    <span className="relative inline-flex rounded-full h-14 w-14 bg-purple-brand/40 border border-[#8247E5] flex items-center justify-center">
+                      <svg className="animate-spin h-6 w-6 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </span>
+                  </span>
+                </div>
+
+                <div className="space-y-3 max-w-sm mx-auto">
+                  <h4 className="font-display font-black tracking-wide text-white uppercase text-sm block">
+                    Connecting to {modalWalletType} Client...
+                  </h4>
+                  <p className="text-xs text-purple-glow font-mono animate-pulse min-h-[40px] px-4">
+                    {modalLoadingText}
+                  </p>
+                </div>
+
+                {/* Status checkpoints */}
+                <div className="flex items-center justify-center space-x-2 pt-2 text-[10px] font-mono uppercase text-gray-500">
+                  <span className={`w-1.5 h-1.5 rounded-full ${modalLoadingStep >= 1 ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+                  <span>Hook</span>
+                  <span className="text-purple-brand/40">•</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${modalLoadingStep >= 2 ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+                  <span>Network</span>
+                  <span className="text-purple-brand/40">•</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${modalLoadingStep >= 3 ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+                  <span>Token Secure</span>
+                  <span className="text-purple-brand/40">•</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${modalLoadingStep >= 4 ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'}`} />
+                  <span>Complete</span>
+                </div>
+              </div>
+            )}
+
+            {/* Disclaimer footer inside modal */}
+            <div className="mt-6 pt-4 border-t border-purple-brand/25 text-[9px] text-[#9CA3AF] text-center font-sans tracking-wide leading-relaxed">
+              Escrow integrations adhere to standard ERC-4337 non-custodial EVM interfaces. Your private keys never bypass security sandboxes.
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

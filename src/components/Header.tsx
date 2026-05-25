@@ -3,17 +3,38 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Coins, Menu, X, ArrowRight } from 'lucide-react';
 
 interface HeaderProps {
   currentView: string;
   onViewChange: (view: string) => void;
   onOpenSupport: () => void;
+  onOpenWalletModal: () => void;
 }
 
-export default function Header({ currentView, onViewChange, onOpenSupport }: HeaderProps) {
+export default function Header({ currentView, onViewChange, onOpenSupport, onOpenWalletModal }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeWallet, setActiveWallet] = useState<string | null>(null);
+
+  // Sync wallet on mount and poll periodically for real-time reactivity
+  useEffect(() => {
+    setActiveWallet(localStorage.getItem('mep_active_wallet'));
+    const interval = setInterval(() => {
+      setActiveWallet(localStorage.getItem('mep_active_wallet'));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleQuickConnect = () => {
+    const existing = localStorage.getItem('mep_active_wallet');
+    if (existing) {
+      localStorage.setItem('mep_redirect_to_dashboard', 'true');
+      onViewChange('disbursement');
+    } else {
+      onOpenWalletModal();
+    }
+  };
 
   const navItems = [
     { id: 'how-it-works', label: 'How It Works' },
@@ -37,16 +58,16 @@ export default function Header({ currentView, onViewChange, onOpenSupport }: Hea
           id="header-brand-logo"
         >
           <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-tr from-[#8247E5] to-[#9F7AEA] rounded-xl shadow-[0_0_15px_rgba(130,71,229,0.5)] group-hover:shadow-[0_0_22px_rgba(130,71,229,0.7)] transition-all">
-            {/* Accurate Polygon token logo drawing */}
+            {/* Real Official Polygon diagonal hexagon logo drawing */}
             <svg 
-              viewBox="0 0 38 38" 
+              viewBox="0 0 24 24" 
               fill="none" 
               className="w-6 h-6 text-white" 
               xmlns="http://www.w3.org/2000/svg"
             >
               <path 
-                d="M30.4 12.835L24.58 9.475V16.2L30.4 19.56a1.114 1.114 0 01.558.966v6.72c0 .403-.215.776-.558.966l-5.82 3.36a1.114 1.114 0 01-1.115 0l-5.82-3.36a1.114 1.114 0 01-.558-.966V20.526l2.316-1.337L15 16.634V9.914a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l5.82 3.36a1.114 1.114 0 01.558.966v2.921h1.529V9.914c0-.792-.423-1.525-1.115-1.898l-5.82-3.36a2.228 2.228 0 00-2.23 0l-5.82 3.36a2.228 2.228 0 00-1.114 1.898v6.72c0 .403.214.776.557.966l5.82 3.36a1.113 1.113 0 01.558.966v6.72c0 .403-.214.776-.558.966l-5.82 3.36a1.114 1.114 0 01-1.115 0l-5.82-3.36c-.343-.2-.558-.564-.558-.966V20.526a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l4.314 2.49V12L9.42 15.166a1.114 1.114 0 01-.558-.966V7.48a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l5.82 3.36a1.114 1.114 0 01.558.966v2.921c0 .792.423 1.525 1.115 1.898l5.82 3.36a2.228 2.228 0 011.114 1.898v6.72c0 .792-.423 1.525-1.114 1.898l-5.82 3.36a2.228 2.228 0 01-2.23 0l-5.82-3.36a2.228 2.228 0 01-1.115-1.898V20.526a2.228 2.228 0 00-1.114-1.898l-5.82-3.36a2.228 2.228 0 00-2.23 0l-5.82 3.36a2.228 2.228 0 00-1.114 1.898V27.246c0 .792.422 1.525 1.114 1.898l5.82 3.36c.692.4 1.538.4 2.23 0l5.82-3.36c.692-.4 1.115-1.133 1.115-1.898V20.526c0-.792-.423-1.525-1.115-1.898l-4.314-2.49V12.835z" 
-                fill="currentColor" 
+                d="M16.47 11.23a1.43 1.43 0 0 0-.71.18l-3.36 1.94a1.43 1.43 0 0 1-1.42 0L7.61 11.4a1.42 1.42 0 0 1-.71-1.23V6.29a1.42 1.42 0 0 1 .71-1.23l3.37-1.94a1.43 1.43 0 0 1 1.42 0l3.36 1.94a1.42 1.42 0 0 1 .71 1.23v2.33a.5.5 0 0 0 1 0V6.29a2.42 2.42 0 0 0-1.21-2.1l-3.36-1.94a2.43 2.43 0 0 0-2.42 0L7.13 4.19A2.42 2.42 0 0 0 5.91 6.3v3.87a2.42 2.42 0 0 0 1.21 2.1l3.37 1.94a2.43 2.43 0 0 0 2.42 0l3.36-1.94a2.42 2.42 0 0 0 1.21-2.1V7.94a1.43 1.43 0 0 1 .71-.18l3.36 1.94a1.43 1.43 0 0 1 .71 1.23v3.87a1.42 1.42 0 0 1-.71 1.23l-3.37 1.94a1.43 1.43 0 0 1-1.42 0l-3.36-1.94a1.42 1.42 0 0 1-.71-1.23V12.5a.5.5 0 0 0-1 0v2.33a2.42 2.42 0 0 0 1.21 2.1l3.36 1.94a2.43 2.43 0 0 0 2.42 0l3.37-1.94a2.42 2.42 0 0 0 .71-1.78v-3.87a2.42 2.42 0 0 0-1.21-2.1l-3.36-1.94a2.43 2.43 0 0 0-1.42-.02 1.43 1.43 0 0 0-1.54 1.3v3z"
+                fill="currentColor"
               />
             </svg>
             <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-dark-bg" title="Network Validators Active"></div>
@@ -89,14 +110,27 @@ export default function Header({ currentView, onViewChange, onOpenSupport }: Hea
 
         {/* Badge and Call to Action buttons */}
         <div className="hidden sm:flex items-center space-x-3">
-          {/* Web3 Connect Wallet Action */}
+          {/* SECURE WEB3 WALLET CONNECT Button - Large, prominent, purple, highly styled */}
           <button
-            id="header-connect-wallet-btn"
-            onClick={() => onViewChange('delegate')}
-            className="flex items-center space-x-1.5 bg-[#140E31]/95 text-emerald-400 hover:text-white hover:bg-[#8247E5]/20 border-2 border-emerald-500/25 hover:border-[#8247E5]/60 font-bold text-xs py-2.5 px-4 rounded-xl transition-all font-display shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(130,71,229,0.25)] active:scale-95 cursor-pointer shrink-0"
+            id="purple-web3-connect-btn"
+            onClick={handleQuickConnect}
+            className={`flex items-center space-x-2 font-extrabold font-display text-xs py-3.5 px-6 rounded-xl border-2 transition-all active:scale-95 cursor-pointer shrink-0 ${
+              activeWallet 
+                ? 'bg-[#140C33] border-purple-brand text-purple-glow hover:text-white hover:bg-gradient-to-r hover:from-purple-brand hover:to-purple-glow shadow-[0_0_15px_rgba(130,71,229,0.25)]' 
+                : 'bg-gradient-to-r from-purple-brand to-purple-glow border-purple-brand/60 hover:border-purple-glow text-white shadow-[0_0_15px_rgba(130,71,229,0.35)] hover:shadow-[0_0_22px_rgba(130,71,229,0.6)] animate-none'
+            }`}
           >
-            <Coins className="w-4 h-4 text-emerald-400 animate-spin-slow shrink-0" />
-            <span>Connect Wallet</span>
+            {activeWallet ? (
+              <>
+                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping shrink-0" />
+                <span className="font-mono">{activeWallet.slice(0, 6)}...{activeWallet.slice(-4)} • DASHBOARD</span>
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 bg-purple-glow rounded-full animate-pulse shrink-0" />
+                <span>SECURE WALLET CONNECT</span>
+              </>
+            )}
           </button>
 
           {/* matic validation status indicator */}
@@ -108,7 +142,7 @@ export default function Header({ currentView, onViewChange, onOpenSupport }: Hea
           <button
             id="header-apply-btn"
             onClick={() => onViewChange('kyc')}
-            className="flex items-center space-x-2 bg-gradient-to-r from-purple-brand to-purple-glow hover:from-purple-glow hover:to-purple-brand text-white font-medium text-xs py-2.5 px-4 rounded-xl shadow-[0_4px_14px_rgba(123,63,228,0.4)] hover:shadow-[0_6px_20px_rgba(123,63,228,0.6)] transition-all font-display group active:translate-y-0.5 cursor-pointer shrink-0"
+            className="flex items-center space-x-2 bg-gradient-to-r from-purple-brand to-purple-glow hover:from-purple-glow hover:to-purple-brand text-white font-medium text-xs py-3 px-5 rounded-xl shadow-[0_4px_14px_rgba(123,63,228,0.4)] hover:shadow-[0_6px_20px_rgba(123,63,228,0.6)] transition-all font-display group active:translate-y-0.5 cursor-pointer shrink-0"
           >
             <span>Apply Now</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -118,10 +152,15 @@ export default function Header({ currentView, onViewChange, onOpenSupport }: Hea
         {/* Mobile menu toggle */}
         <div className="flex items-center space-x-2 lg:hidden">
           <button
-            onClick={() => onViewChange('kyc')}
-            className="sm:hidden block bg-gradient-to-r from-purple-brand to-purple-glow text-white font-medium text-xs px-3 py-1.5 rounded-lg font-display"
+            onClick={handleQuickConnect}
+            className={`text-[11px] font-bold font-display px-3 py-2 rounded-lg border flex items-center gap-1.5 cursor-pointer ${
+              activeWallet 
+                ? 'bg-purple-brand/20 border-purple-brand/40 text-purple-glow' 
+                : 'bg-purple-brand border-purple-glow text-white'
+            }`}
           >
-            Apply
+            <span className={`w-1.5 h-1.5 rounded-full ${activeWallet ? 'bg-emerald-400 animate-ping' : 'bg-white animate-pulse'}`}></span>
+            <span>{activeWallet ? 'Dashboard' : 'Connect Wallet'}</span>
           </button>
           
           <button
@@ -161,6 +200,17 @@ export default function Header({ currentView, onViewChange, onOpenSupport }: Hea
           
           {/* Action and Info for mobile */}
           <div className="pt-3 border-t border-purple-brand/10 flex flex-col space-y-2">
+            <button
+              onClick={handleQuickConnect}
+              className={`w-full text-center py-3 rounded-lg font-bold font-display text-xs tracking-wider ${
+                activeWallet 
+                  ? 'bg-purple-brand/15 text-purple-glow border border-purple-brand/35' 
+                  : 'bg-gradient-to-r from-purple-brand to-purple-glow text-white shadow-lg'
+              }`}
+            >
+              {activeWallet ? 'GO TO STAKER DASHBOARD' : 'SECURE WALLET CONNECT'}
+            </button>
+            
             <div className="flex items-center justify-between px-4 py-2 bg-[#191040] rounded-lg text-xs font-mono text-purple-glow">
               <span className="flex items-center space-x-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />

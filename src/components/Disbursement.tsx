@@ -21,9 +21,16 @@ interface DisbursementProps {
 export default function Disbursement({ application, fundingAmount, onViewChange }: DisbursementProps) {
   // Simulator state if they aren't approved yet
   const [demoAmount, setDemoAmount] = useState<number>(fundingAmount || 100000);
-  const [activeTab, setActiveTab] = useState<'info' | 'dashboard'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'dashboard'>(() => {
+    const fromRedirect = localStorage.getItem('mep_redirect_to_dashboard');
+    if (fromRedirect === 'true' || localStorage.getItem('mep_active_wallet')) {
+      localStorage.removeItem('mep_redirect_to_dashboard');
+      return 'dashboard';
+    }
+    return 'info';
+  });
 
-  const [maticLivePrice, setMaticLivePrice] = useState<number>(0.3850);
+  const [maticLivePrice, setMaticLivePrice] = useState<number>(0.8500);
   const [isLivePriceLoading, setIsLivePriceLoading] = useState<boolean>(true);
   
   // Custom compliance states for strict card rules
@@ -34,14 +41,20 @@ export default function Disbursement({ application, fundingAmount, onViewChange 
   const fetchPrice = async () => {
     setIsLivePriceLoading(true);
     try {
-      // CoinGecko
-      const cgResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd');
+      // CoinGecko supporting both matic-network and polygon-ecosystem-token
+      const cgResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network,polygon-ecosystem-token&vs_currencies=usd');
       if (cgResponse.ok) {
         const cgData = await cgResponse.json();
-        if (cgData && cgData['polygon-ecosystem-token'] && typeof cgData['polygon-ecosystem-token'].usd === 'number') {
-          setMaticLivePrice(cgData['polygon-ecosystem-token'].usd);
-          setIsLivePriceLoading(false);
-          return;
+        if (cgData) {
+          if (cgData['matic-network'] && typeof cgData['matic-network'].usd === 'number') {
+            setMaticLivePrice(cgData['matic-network'].usd);
+            setIsLivePriceLoading(false);
+            return;
+          } else if (cgData['polygon-ecosystem-token'] && typeof cgData['polygon-ecosystem-token'].usd === 'number') {
+            setMaticLivePrice(cgData['polygon-ecosystem-token'].usd);
+            setIsLivePriceLoading(false);
+            return;
+          }
         }
       }
     } catch (e) {
@@ -114,29 +127,39 @@ export default function Disbursement({ application, fundingAmount, onViewChange 
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
 
+  const [walletNetwork, setWalletNetwork] = useState<string>('Polygon Mainnet');
+
   // Sync wallet on mount & listen to localStorage mutations (realtime updates)
   useEffect(() => {
     const cachedWallet = localStorage.getItem('mep_active_wallet');
     const cachedWalletType = localStorage.getItem('mep_active_wallet_type');
+    const cachedWalletNetwork = localStorage.getItem('mep_active_wallet_network');
     if (cachedWallet && cachedWalletType) {
       setWalletAddress(cachedWallet);
       setSelectedWallet(cachedWalletType);
       setWalletConnectState('CONNECTED');
+      if (cachedWalletNetwork) {
+        setWalletNetwork(cachedWalletNetwork);
+      }
     }
   }, [activeTab]);
 
   const handleConnectWeb3 = (walletType: string) => {
     setWalletConnectState('CONNECTING');
     setSelectedWallet(walletType);
+    
+    // Set simulated step texts during the connection process
+    localStorage.setItem('mep_active_wallet_type', walletType);
+    localStorage.setItem('mep_active_wallet_network', walletNetwork);
+    localStorage.setItem('mep_active_wallet_balance', walletNetwork.includes('Polygon') ? '250000' : '450');
+
     setTimeout(() => {
       const randomHex = Math.floor(Math.random() * 1e16).toString(16);
-      const address = `0x71C${randomHex.toUpperCase()}49A1`;
+      const address = `0x71C${randomHex.toUpperCase().slice(0, 12)}49A1`;
       setWalletAddress(address);
       setWalletConnectState('CONNECTED');
       localStorage.setItem('mep_active_wallet', address);
-      localStorage.setItem('mep_active_wallet_type', walletType);
-      localStorage.setItem('mep_active_wallet_balance', '250000');
-    }, 1200);
+    }, 2800);
   };
 
   const handleDisconnectWeb3 = () => {
@@ -145,7 +168,9 @@ export default function Disbursement({ application, fundingAmount, onViewChange 
     setSelectedWallet('');
     localStorage.removeItem('mep_active_wallet');
     localStorage.removeItem('mep_active_wallet_type');
+    localStorage.removeItem('mep_active_wallet_network');
     localStorage.removeItem('mep_active_wallet_balance');
+    localStorage.removeItem('mep_redirect_to_dashboard');
   };
 
   const handleManualLookup = (e: React.FormEvent) => {
@@ -605,46 +630,102 @@ export default function Disbursement({ application, fundingAmount, onViewChange 
                 <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-300 rounded-xl text-xs font-mono">
                   ⚠️ Note: Public registry lookup lets you verify account balances using a valid Polygon wallet address, even without a connected wallet.
                 </div>
-              </div>
-
-              {/* Action grid: Web3 browser connection OR public address query lookup */}
+                      {/* Action grid: Web3 browser connection OR public address query lookup */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch pt-2 text-left font-sans">
                 
                 {/* Method A: Browser wallet integration */}
-                <div className="bg-black/40 border border-purple-brand/25 p-5 rounded-xl flex flex-col justify-between space-y-4">
-                  <div className="space-y-1">
-                    <span className="text-[10px] bg-purple-brand/25 text-purple-glow font-mono font-bold px-2 py-0.5 rounded border border-purple-brand/30 uppercase">Option A</span>
-                    <h4 className="font-display font-bold text-white text-sm">Direct Desktop / Mobile Web3 App</h4>
-                    <p className="text-[11px] text-gray-400 font-sans">Initialize a client-side handshake connection securely through verified provider extensions.</p>
-                  </div>
+                <div className="bg-black/40 border border-purple-brand/25 p-5 rounded-xl flex flex-col justify-between space-y-4 relative min-h-[300px]">
+                  {walletConnectState === 'CONNECTING' ? (
+                    <div className="flex flex-col items-center justify-center space-y-4 py-12 text-center h-full w-full">
+                      <div className="flex items-center justify-center">
+                        <span className="relative flex h-10 w-10">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8247E5] opacity-40"></span>
+                          <span className="relative inline-flex rounded-full h-10 w-10 bg-purple-brand/40 border border-[#8247E5] flex items-center justify-center">
+                            <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          </span>
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono uppercase text-purple-glow tracking-widest block font-bold">Connecting via Web3 Handshake</span>
+                        <p className="text-[11px] text-gray-400 font-sans leading-relaxed animate-pulse">
+                          Verifying credentials for {selectedWallet} client on {walletNetwork}. Interfacing non-custodial POS joint-escrow protocol...
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] bg-purple-brand/25 text-purple-glow font-mono font-bold px-2 py-0.5 rounded border border-purple-brand/30 uppercase">Option A</span>
+                          <span className="text-[9px] font-mono text-emerald-400">Secure AES Handshake</span>
+                        </div>
+                        <h4 className="font-display font-black text-white text-base">Direct Hot Web3 Integration</h4>
+                        <p className="text-[11px] text-gray-400 font-sans leading-relaxed">
+                          Initialize a non-custodial client-side connection through verified browser or device wallets supporting EVM standard layers.
+                        </p>
 
-                  <div className="space-y-2 pt-2 col-span-1">
-                    <button
-                      type="button"
-                      onClick={() => handleConnectWeb3('MetaMask')}
-                      className="w-full py-2.5 bg-[#E67E22]/10 hover:bg-[#E67E22]/20 text-[#E67E22] border border-[#E67E22]/30 rounded-xl text-xs font-bold font-display uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Wallet className="w-4 h-4" />
-                      <span>MetaMask Handshake</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleConnectWeb3('Trust Wallet')}
-                      className="w-full py-2.5 bg-[#3498DB]/10 hover:bg-[#3498DB]/20 text-[#3498DB] border border-[#3498DB]/30 rounded-xl text-xs font-bold font-display uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Smartphone className="w-4 h-4" />
-                      <span>Trust Wallet Connect</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleConnectWeb3('WalletConnect Registry')}
-                      className="w-full py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold font-display uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>WalletConnect Hub</span>
-                    </button>
-                  </div>
-                </div>
+                        {/* Local Network Selector Toggle */}
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[9px] text-[#8247E5] font-mono block uppercase font-bold tracking-wider">Configure Ledger Network Standard</span>
+                          <div className="flex gap-2 bg-[#120B2F] p-1 rounded-xl border border-purple-brand/20">
+                            <button
+                              type="button"
+                              onClick={() => setWalletNetwork('Polygon Mainnet')}
+                              className={`flex-1 py-1 px-3 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
+                                walletNetwork === 'Polygon Mainnet'
+                                  ? 'bg-[#8247E5] text-white shadow-[0_0_10px_rgba(130,71,229,0.35)]'
+                                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              Polygon PoS
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setWalletNetwork('Binance Smart Chain (BSC)')}
+                              className={`flex-1 py-1 px-3 rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${
+                                walletNetwork === 'Binance Smart Chain (BSC)'
+                                  ? 'bg-yellow-600 text-white shadow-[0_0_10px_rgba(202,138,4,0.35)]'
+                                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                              BSC Chain
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 pt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleConnectWeb3('MetaMask')}
+                          className="w-full py-2.5 bg-purple-brand/10 hover:bg-purple-brand/20 text-[#D1D5DB] hover:text-white border border-[#8247E5]/35 rounded-xl text-xs font-bold font-display uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <Wallet className="w-4 h-4 text-purple-glow" />
+                          <span>MetaMask Client</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleConnectWeb3('Trust Wallet')}
+                          className="w-full py-2.5 bg-purple-brand/10 hover:bg-purple-brand/20 text-[#D1D5DB] hover:text-white border border-[#8247E5]/35 rounded-xl text-xs font-bold font-display uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <Smartphone className="w-4 h-4 text-purple-glow" />
+                          <span>Trust Wallet App</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleConnectWeb3('WalletConnect')}
+                          className="w-full py-2.5 bg-gradient-to-r from-purple-brand/20 to-[#120731] hover:from-purple-brand/35 hover:to-[#1a0c44] text-[#D1D5DB] hover:text-white border border-[#8247E5]/50 rounded-xl text-xs font-bold font-display uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        >
+                          <Globe className="w-4 h-4 text-purple-glow" />
+                          <span>WalletConnect Registry</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>        </div>
 
                 {/* Method B: Manual Address Query Index */}
                 <div className="bg-black/40 border border-purple-brand/25 p-5 rounded-xl flex flex-col justify-between space-y-4">

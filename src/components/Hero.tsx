@@ -14,19 +14,24 @@ interface HeroProps {
 
 export default function Hero({ onViewChange, onSetFundingAmount, savedAmount }: HeroProps) {
   const [fundingAmount, setFundingAmount] = useState<number>(savedAmount);
-  const [maticPrice, setMaticPrice] = useState<number>(0.3850);
+  const [maticPrice, setMaticPrice] = useState<number>(0.8500);
 
   // Fetch live MATIC price
   useEffect(() => {
     const fetchPrice = async () => {
       try {
-        // Try CoinGecko first (user preferred endpoint)
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd');
+        // Try CoinGecko first (ids supporting both matic-network and polygon-ecosystem-token)
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network,polygon-ecosystem-token&vs_currencies=usd');
         if (response.ok) {
           const data = await response.json();
-          if (data && data['polygon-ecosystem-token'] && typeof data['polygon-ecosystem-token'].usd === 'number') {
-            setMaticPrice(data['polygon-ecosystem-token'].usd);
-            return;
+          if (data) {
+            if (data['matic-network'] && typeof data['matic-network'].usd === 'number') {
+              setMaticPrice(data['matic-network'].usd);
+              return;
+            } else if (data['polygon-ecosystem-token'] && typeof data['polygon-ecosystem-token'].usd === 'number') {
+              setMaticPrice(data['polygon-ecosystem-token'].usd);
+              return;
+            }
           }
         }
       } catch (err) {
@@ -123,13 +128,13 @@ export default function Hero({ onViewChange, onSetFundingAmount, savedAmount }: 
           
           <div className="inline-flex items-center space-x-2.5 bg-purple-brand/15 border border-[#8247E5]/45 rounded-full px-4 py-2 text-xs text-white font-display shadow-[0_0_20px_rgba(130,71,229,0.15)]">
             <svg 
-              viewBox="0 0 38 38" 
+              viewBox="0 0 24 24" 
               fill="none" 
               className="w-4.5 h-4.5 text-[#8247E5]" 
               xmlns="http://www.w3.org/2000/svg"
             >
               <path 
-                d="M30.4 12.835L24.58 9.475V16.2L30.4 19.56a1.114 1.114 0 01.558.966v6.72c0 .403-.215.776-.558.966l-5.82 3.36a1.114 1.114 0 01-1.115 0l-5.82-3.36a1.114 1.114 0 01-.558-.966V20.526l2.316-1.337L15 16.634V9.914a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l5.82 3.36a1.114 1.114 0 01.558.966v2.921h1.529V9.914c0-.792-.423-1.525-1.115-1.898l-5.82-3.36a2.228 2.228 0 00-2.23 0l-5.82 3.36a2.228 2.228 0 00-1.114 1.898v6.72c0 .403.214.776.557.966l5.82 3.36a1.113 1.113 0 01.558.966v6.72c0 .403-.214.776-.558.966l-5.82 3.36a1.114 1.114 0 01-1.115 0l-5.82-3.36c-.343-.2-.558-.564-.558-.966V20.526a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l4.314 2.49V12L9.42 15.166a1.114 1.114 0 01-.558-.966V7.48a1.114 1.114 0 01.558-.966l5.82-3.36a1.114 1.114 0 011.115 0l5.82 3.36a1.114 1.114 0 01.558.966v2.921c0 .792.423 1.525 1.115 1.898l5.82 3.36a2.228 2.228 0 011.114 1.898v6.72c0 .792-.423 1.525-1.114 1.898l-5.82 3.36a2.228 2.228 0 01-2.23 0l-5.82-3.36a2.228 2.228 0 01-1.115-1.898V20.526a2.228 2.228 0 00-1.114-1.898l-5.82-3.36a2.228 2.228 0 00-2.23 0l-5.82 3.36a2.228 2.228 0 00-1.114 1.898V27.246c0 .792.422 1.525 1.114 1.898l5.82 3.36c.692.4 1.538.4 2.23 0l5.82-3.36c.692-.4 1.115-1.133 1.115-1.898V20.526c0-.792-.423-1.525-1.115-1.898l-4.314-2.49V12.835z" 
+                d="M16.47 11.23a1.43 1.43 0 0 0-.71.18l-3.36 1.94a1.43 1.43 0 0 1-1.42 0L7.61 11.4a1.42 1.42 0 0 1-.71-1.23V6.29a1.42 1.42 0 0 1 .71-1.23l3.37-1.94a1.43 1.43 0 0 1 1.42 0l3.36 1.94a1.42 1.42 0 0 1 .71 1.23v2.33a.5.5 0 0 0 1 0V6.29a2.42 2.42 0 0 0-1.21-2.1l-3.36-1.94a2.43 2.43 0 0 0-2.42 0L7.13 4.19A2.42 2.42 0 0 0 5.91 6.3v3.87a2.42 2.42 0 0 0 1.21 2.1l3.37 1.94a2.43 2.43 0 0 0 2.42 0l3.36-1.94a2.42 2.42 0 0 0 1.21-2.1V7.94a1.43 1.43 0 0 1 .71-.18l3.36 1.94a1.43 1.43 0 0 1 .71 1.23v3.87a1.42 1.42 0 0 1-.71 1.23l-3.37 1.94a1.43 1.43 0 0 1-1.42 0l-3.36-1.94a1.42 1.42 0 0 1-.71-1.23V12.5a.5.5 0 0 0-1 0v2.33a2.42 2.42 0 0 0 1.21 2.1l3.36 1.94a2.43 2.43 0 0 0 2.42 0l3.37-1.94a2.42 2.42 0 0 0 .71-1.78v-3.87a2.42 2.42 0 0 0-1.21-2.1l-3.36-1.94a2.43 2.43 0 0 0-1.42-.02 1.43 1.43 0 0 0-1.54 1.3v3z" 
                 fill="#8247E5" 
               />
             </svg>

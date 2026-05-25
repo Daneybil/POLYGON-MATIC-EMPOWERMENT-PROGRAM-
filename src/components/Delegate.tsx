@@ -20,7 +20,7 @@ export default function Delegate({ onViewChange, savedAmount }: DelegateProps) {
   const [selectedWallet, setSelectedWallet] = useState<string>('');
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [delegatorBalance, setDelegatorBalance] = useState<number>(250000); // 250,000 standard MATIC balance mock
-  const [activeMaticPrice, setActiveMaticPrice] = useState<number>(0.3850);
+  const [activeMaticPrice, setActiveMaticPrice] = useState<number>(0.8500);
   const [isPriceLoading, setIsPriceLoading] = useState<boolean>(true);
   
   // Staking states
@@ -42,14 +42,20 @@ export default function Delegate({ onViewChange, savedAmount }: DelegateProps) {
   const fetchPrice = async () => {
     setIsPriceLoading(true);
     try {
-      // CoinGecko
-      const cgResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=polygon-ecosystem-token&vs_currencies=usd');
+      // CoinGecko supporting both matic-network and polygon-ecosystem-token
+      const cgResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network,polygon-ecosystem-token&vs_currencies=usd');
       if (cgResponse.ok) {
         const cgData = await cgResponse.json();
-        if (cgData && cgData['polygon-ecosystem-token'] && typeof cgData['polygon-ecosystem-token'].usd === 'number') {
-          setActiveMaticPrice(cgData['polygon-ecosystem-token'].usd);
-          setIsPriceLoading(false);
-          return;
+        if (cgData) {
+          if (cgData['matic-network'] && typeof cgData['matic-network'].usd === 'number') {
+            setActiveMaticPrice(cgData['matic-network'].usd);
+            setIsPriceLoading(false);
+            return;
+          } else if (cgData['polygon-ecosystem-token'] && typeof cgData['polygon-ecosystem-token'].usd === 'number') {
+            setActiveMaticPrice(cgData['polygon-ecosystem-token'].usd);
+            setIsPriceLoading(false);
+            return;
+          }
         }
       }
     } catch (e) {
