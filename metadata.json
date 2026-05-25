@@ -1,0 +1,6 @@
+{
+  "name": "MATIC Empowerment Program",
+  "description": "Empowering global participants with direct capital funding to purchase and delegate MATIC. Keep 10% of your funding, use 90% to buy and stake MATIC for long-term rewards, network security, and Polygon's growth.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
